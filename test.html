@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumiq — Test Big Five</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23534AB7'/><circle cx='16' cy='10' r='4' fill='%23EEEDFE'/><circle cx='9' cy='23' r='3' fill='%23AFA9EC'/><circle cx='23' cy='23' r='3' fill='%23AFA9EC'/></svg>">
+<style>
+  /* ── EKRAN STARTOWY ── */
+  .start-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:80vh; padding:40px 24px; text-align:center; }
+  .start-icon { width:72px; height:72px; background:var(--pu-50); border:0.5px solid var(--pu-100); border-radius:20px; display:flex; align-items:center; justify-content:center; margin:0 auto 24px; }
+  .start-title { font-family:var(--font-serif); font-size:clamp(26px,5vw,38px); letter-spacing:-0.02em; color:var(--ink); margin-bottom:12px; }
+  .start-sub { font-size:15px; color:var(--ink2); line-height:1.65; max-width:440px; margin:0 auto 32px; }
+  .start-meta { display:flex; gap:20px; justify-content:center; flex-wrap:wrap; margin-bottom:32px; }
+  .start-meta-item { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink2); }
+  .start-meta-dot { width:5px; height:5px; border-radius:50%; background:var(--pu-400); }
+
+  /* ── QUIZ ── */
+  #quiz-screen { display:none; }
+  #results-screen { display:none; }
+
+  /* Animacja przejścia pytań */
+  .question-enter { animation: qEnter 0.3s ease both; }
+  @keyframes qEnter { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+  .question-exit { animation: qExit 0.2s ease both; }
+  @keyframes qExit { from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(-20px); } }
+
+  /* ── WYNIKI ── */
+  .enneagram-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .en-chip { background:var(--cr); border:0.5px solid var(--bd); border-radius:10px; padding:12px 14px; }
+  .en-chip__label { font-size:10px; font-weight:500; color:var(--ink3); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+  .en-chip__val { font-size:16px; font-weight:500; color:var(--pu-800); letter-spacing:-0.02em; }
+  .en-chip__sub { font-size:11px; color:var(--ink3); margin-top:2px; }
+
+  /* Progress numeryczny */
+  .q-counter { font-size:12px; color:var(--ink3); white-space:nowrap; }
+
+  /* Ukończono ekran ładowania */
+  .calculating { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; gap:16px; text-align:center; padding:40px; }
+  .calc-spinner { width:40px; height:40px; border:2px solid var(--pu-100); border-top-color:var(--pu-600); border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Share banner */
+  .share-bar { display:flex; align-items:center; gap:10px; padding:14px 16px; background:var(--pu-50); border:0.5px solid var(--pu-100); border-radius:10px; margin-bottom:14px; }
+  .share-bar__text { font-size:13px; color:var(--pu-800); flex:1; line-height:1.4; }
+  .share-bar__btn { background:var(--pu-600); color:#fff; font-size:12px; font-weight:500; padding:7px 14px; border-radius:7px; border:none; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav__inner">
+    <a href="index.html" class="nav__logo">
+      <div class="nav__logo-mark">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="4.5" r="2.5" fill="#EEEDFE"/>
+          <circle cx="3.5" cy="10.5" r="1.8" fill="#AFA9EC"/>
+          <circle cx="10.5" cy="10.5" r="1.8" fill="#AFA9EC"/>
+        </svg>
+      </div>
+      lumiq
+    </a>
+  </div>
+</nav>
+
+<!-- ══ EKRAN STARTOWY ══════════════════════════════════════════════════════ -->
+<div id="start-screen">
+  <div class="start-screen">
+    <div class="start-icon">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <rect x="4" y="4" width="10" height="10" rx="3" fill="#534AB7"/>
+        <rect x="18" y="4" width="10" height="10" rx="3" fill="#AFA9EC"/>
+        <rect x="4" y="18" width="10" height="10" rx="3" fill="#AFA9EC"/>
+        <rect x="18" y="18" width="10" height="10" rx="3" fill="#534AB7"/>
+      </svg>
+    </div>
+    <h1 class="start-title">Test Wielkiej Piątki<br><em style="font-style:italic;color:var(--pu-600)">Big Five</em></h1>
+    <p class="start-sub">Najbardziej rzetelny naukowo model osobowości. Mierzy pięć kluczowych wymiarów, które opisują, jak myślisz, czujesz i działasz.</p>
+    <div class="start-meta">
+      <div class="start-meta-item"><div class="start-meta-dot"></div>40 pytań</div>
+      <div class="start-meta-item"><div class="start-meta-dot"></div>ok. 10–12 minut</div>
+      <div class="start-meta-item"><div class="start-meta-dot"></div>wynik od razu</div>
+      <div class="start-meta-item"><div class="start-meta-dot"></div>PDF do pobrania</div>
+    </div>
+    <button class="btn btn--primary btn--lg" onclick="startTest()">Zacznij test →</button>
+    <p style="font-size:12px;color:var(--ink3);margin-top:12px">Odpowiadaj szczerze — nie ma złych odpowiedzi</p>
+  </div>
+</div>
+
+<!-- ══ EKRAN QUIZU ═════════════════════════════════════════════════════════ -->
+<div id="quiz-screen" class="test-page">
+  <header class="test-header">
+    <button class="test-header__back" onclick="goBack()" title="Poprzednie pytanie">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M7.5 2L3.5 6l4 4" stroke="#888780" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="test-header__meta">
+      <div class="test-header__name">Big Five — Wielka Piątka</div>
+      <div class="test-header__progress-bar">
+        <div class="test-header__progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="q-counter" id="q-counter">1 / 40</div>
+  </header>
+
+  <div class="test-body" id="question-wrap">
+    <!-- Pytanie renderowane przez JS -->
+  </div>
+
+  <footer class="test-footer">
+    <button class="btn btn--ghost" onclick="goBack()">← Wstecz</button>
+    <span class="test-footer__hint" id="footer-hint">Wybierz odpowiedź aby kontynuować</span>
+    <button class="btn btn--primary" id="next-btn" onclick="goNext()" disabled>Dalej →</button>
+  </footer>
+</div>
+
+<!-- ══ KALKULACJA ════════════════════════════════════════════════════════== -->
+<div id="calculating-screen" style="display:none">
+  <div class="calculating">
+    <div class="calc-spinner"></div>
+    <div class="t-h3">Obliczamy Twoje wyniki…</div>
+    <div class="t-small">Analizujemy odpowiedzi na 5 wymiarach osobowości</div>
+  </div>
+</div>
+
+<!-- ══ WYNIKI ══════════════════════════════════════════════════════════════ -->
+<div id="results-screen" class="results-page">
+  <header class="results-header">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">
+        <div class="nav__logo-mark">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="4.5" r="2.5" fill="#EEEDFE"/>
+            <circle cx="3.5" cy="10.5" r="1.8" fill="#AFA9EC"/>
+            <circle cx="10.5" cy="10.5" r="1.8" fill="#AFA9EC"/>
+          </svg>
+        </div>
+        lumiq
+      </a>
+    </div>
+  </header>
+
+  <div class="results-wrap">
+
+    <!-- Tytuł -->
+    <div class="results-title-block fade-up">
+      <div class="results-badge">
+        <div class="results-badge__dot"></div>
+        <span style="font-size:12px;font-weight:500;color:var(--pu-800)">Twoje wyniki są gotowe</span>
+      </div>
+      <h1 class="t-h1" style="margin-bottom:4px">Twój profil osobowości</h1>
+      <p class="t-caption" id="results-date"></p>
+    </div>
+
+    <!-- Typ -->
+    <div class="type-hero-card fade-up fade-up--delay-1" id="type-hero">
+      <!-- Wypełniane przez JS -->
+    </div>
+
+    <!-- Big Five bars -->
+    <div class="results-section fade-up fade-up--delay-1">
+      <div class="results-section__title">Big Five — Twoje wyniki</div>
+      <div id="big5-bars"><!-- JS --></div>
+    </div>
+
+    <!-- Opis -->
+    <div class="results-section fade-up fade-up--delay-2">
+      <div class="results-section__title">Opis Twojego profilu</div>
+      <div class="desc-box" id="profile-desc"><!-- JS --></div>
+    </div>
+
+    <!-- Share -->
+    <div class="share-bar fade-up">
+      <div class="share-bar__text">Podziel się wynikami ze znajomymi — skopiuj link do tego raportu.</div>
+      <button class="share-bar__btn" onclick="copyLink()">Kopiuj link</button>
+    </div>
+
+    <!-- PDF preview -->
+    <div class="pdf-preview-wrap fade-up">
+      <div class="pdf-preview-header">
+        <span style="font-size:14px;font-weight:500;color:#CECBF6;letter-spacing:-0.02em">lumiq</span>
+        <span style="font-size:12px;color:#7F77DD" id="pdf-date-label"></span>
+      </div>
+      <div class="pdf-preview-body" id="pdf-preview-rows"><!-- JS --></div>
+      <div class="pdf-actions">
+        <button class="btn btn--primary" onclick="downloadPDF()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 2v7M4 6l3 3 3-3M2 11h10" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Pobierz PDF
+        </button>
+        <button class="btn btn--secondary" onclick="copyLink()">Udostępnij wyniki</button>
+      </div>
+    </div>
+
+    <!-- Paywall -->
+    <div class="paywall-card fade-up">
+      <div class="paywall-card__top"></div>
+      <div class="paywall-card__body">
+        <p class="t-label" style="margin-bottom:8px">Odblokuj pełną analizę</p>
+        <div class="paywall-card__title">Wiesz kim jesteś.<br>Dowiedz się co z tym zrobić.</div>
+        <p class="paywall-card__desc">Twój profil jest gotowy. Teraz czas na głębszą warstwę — analizę zawodową, rozmowę z AI i konkretne wskazówki.</p>
+        <div class="paywall-features">
+          <div class="paywall-feat"><div class="paywall-feat__dot"></div>Analiza zawodowa</div>
+          <div class="paywall-feat"><div class="paywall-feat__dot"></div>8 ścieżek kariery</div>
+          <div class="paywall-feat"><div class="paywall-feat__dot"></div>Rozmowa z AI</div>
+          <div class="paywall-feat"><div class="paywall-feat__dot"></div>Obszary do rozwoju</div>
+          <div class="paywall-feat"><div class="paywall-feat__dot"></div>Rozszerzony PDF</div>
+          <div class="paywall-feat"><div class="paywall-feat__dot"></div>Śledzenie zmian (Pro)</div>
+        </div>
+        <div class="paywall-options">
+          <div class="paywall-option" id="opt-single" onclick="selectPaywallOption('single')">
+            <div class="paywall-option__radio"><div class="paywall-option__radio-inner"></div></div>
+            <div class="paywall-option__info">
+              <div class="paywall-option__name">Raport Premium — jednorazowo</div>
+              <div class="paywall-option__sub">Pełna analiza tego testu · 30 wiadomości AI</div>
+            </div>
+            <div class="paywall-option__price">
+              <span class="paywall-option__amount">39 zł</span>
+              <span class="paywall-option__period">raz</span>
+            </div>
+          </div>
+          <div class="paywall-option selected" id="opt-pro" onclick="selectPaywallOption('pro')">
+            <div class="paywall-option__radio"><div class="paywall-option__radio-inner"></div></div>
+            <div class="paywall-option__info">
+              <div class="paywall-option__name">Lumiq Pro — roczny dostęp</div>
+              <div class="paywall-option__sub">Wszystkie testy · AI bez limitu · śledzenie zmian</div>
+              <span class="paywall-option__save">oszczędzasz 57% vs jednorazowe</span>
+            </div>
+            <div class="paywall-option__price">
+              <span class="paywall-option__amount">99 zł</span>
+              <span class="paywall-option__period">/ rok</span>
+            </div>
+          </div>
+        </div>
+        <button class="paywall-cta" id="paywall-cta-btn" onclick="handlePayment()">Rozpocznij Lumiq Pro — 99 zł / rok</button>
+        <p class="paywall-note">Stripe · bezpieczna płatność · anulowanie w każdej chwili</p>
+      </div>
+    </div>
+
+  </div><!-- /results-wrap -->
+</div><!-- /results-screen -->
+
+<script src="js/data.js"></script>
+<script>
+// ── STAN APLIKACJI ─────────────────────────────────────────────────────────
+const state = {
+  currentIndex: 0,
+  answers: {},       // { questionId: value }
+  scores: null,
+  personalityType: null,
+};
+
+const questions = LUMIQ.bigFiveQuestions;
+const TOTAL = questions.length;
+
+// ── START ──────────────────────────────────────────────────────────────────
+function startTest() {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'flex';
+  renderQuestion(0);
+}
+
+// ── RENDEROWANIE PYTANIA ───────────────────────────────────────────────────
+function renderQuestion(index) {
+  const q = questions[index];
+  const dimNames = { O:'Otwartość', C:'Sumienność', E:'Ekstrawersja', A:'Ugodowość', N:'Neurotyczność' };
+  const savedVal = state.answers[q.id];
+
+  const wrap = document.getElementById('question-wrap');
+  wrap.innerHTML = `
+    <div class="test-q__label t-label">${dimNames[q.dimension]}</div>
+    <div class="test-q__text">${q.text}</div>
+    <p class="test-q__sub">Oceń, na ile to zdanie opisuje Ciebie.</p>
+    <div class="scale-wrap">
+      <div class="scale-labels">
+        <span>Zupełnie nie</span>
+        <span>Zdecydowanie tak</span>
+      </div>
+      <div class="scale-options" id="scale-opts">
+        ${[1,2,3,4,5].map(v => `
+          <div class="scale-opt ${savedVal===v?'selected':''}" onclick="selectAnswer(${v})" data-val="${v}">
+            <div class="scale-opt__circle">${v}</div>
+            <div class="scale-opt__label">${v===1?'Zupełnie<br>nie':v===3?'Neutralnie':v===5?'Zdecydowanie<br>tak':''}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  wrap.classList.remove('question-exit');
+  wrap.classList.add('question-enter');
+
+  // Progress
+  const pct = Math.round((index / TOTAL) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('q-counter').textContent = `${index + 1} / ${TOTAL}`;
+
+  // Next btn
+  const nextBtn = document.getElementById('next-btn');
+  const hint = document.getElementById('footer-hint');
+  if (savedVal !== undefined) {
+    nextBtn.disabled = false;
+    nextBtn.textContent = index === TOTAL - 1 ? 'Zakończ test →' : 'Dalej →';
+    hint.textContent = '';
+  } else {
+    nextBtn.disabled = true;
+    nextBtn.textContent = index === TOTAL - 1 ? 'Zakończ test →' : 'Dalej →';
+    hint.textContent = 'Wybierz odpowiedź aby kontynuować';
+  }
+}
+
+// ── WYBÓR ODPOWIEDZI ───────────────────────────────────────────────────────
+function selectAnswer(val) {
+  const q = questions[state.currentIndex];
+  state.answers[q.id] = val;
+
+  document.querySelectorAll('.scale-opt').forEach(el => {
+    el.classList.toggle('selected', parseInt(el.dataset.val) === val);
+  });
+
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.disabled = false;
+  document.getElementById('footer-hint').textContent = '';
+
+  // Auto-advance po krótkim opóźnieniu (UX improvement)
+  setTimeout(() => {
+    if (state.currentIndex < TOTAL - 1) goNext();
+  }, 320);
+}
+
+// ── NAWIGACJA ──────────────────────────────────────────────────────────────
+function goNext() {
+  const q = questions[state.currentIndex];
+  if (state.answers[q.id] === undefined) return;
+
+  if (state.currentIndex === TOTAL - 1) {
+    showResults();
+    return;
+  }
+
+  const wrap = document.getElementById('question-wrap');
+  wrap.classList.remove('question-enter');
+  wrap.classList.add('question-exit');
+
+  setTimeout(() => {
+    state.currentIndex++;
+    renderQuestion(state.currentIndex);
+  }, 200);
+}
+
+function goBack() {
+  if (state.currentIndex === 0) {
+    // Wróć do startu
+    document.getElementById('quiz-screen').style.display = 'none';
+    document.getElementById('start-screen').style.display = 'block';
+    return;
+  }
+  const wrap = document.getElementById('question-wrap');
+  wrap.classList.remove('question-enter');
+  wrap.classList.add('question-exit');
+  setTimeout(() => {
+    state.currentIndex--;
+    renderQuestion(state.currentIndex);
+  }, 200);
+}
+
+// ── OBLICZANIE I WYNIKI ────────────────────────────────────────────────────
+function showResults() {
+  document.getElementById('quiz-screen').style.display = 'none';
+  document.getElementById('calculating-screen').style.display = 'block';
+
+  // Symulacja obliczania (1.5s dla efektu)
+  setTimeout(() => {
+    state.scores = LUMIQ.calculateScores(state.answers);
+    state.personalityType = LUMIQ.getPersonalityType(state.scores);
+    renderResults();
+    document.getElementById('calculating-screen').style.display = 'none';
+    document.getElementById('results-screen').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 1500);
+}
+
+function renderResults() {
+  const { scores, personalityType } = state;
+  const dimMeta = LUMIQ.dimensionMeta;
+  const dimDescs = LUMIQ.dimensionDescriptions;
+  const date = new Date().toLocaleDateString('pl-PL', { day:'numeric', month:'long', year:'numeric' });
+
+  // Data
+  document.getElementById('results-date').textContent = `Big Five · ukończony ${date}`;
+  document.getElementById('pdf-date-label').textContent = `Raport osobowości · ${date}`;
+
+  // Typ
+  const typeEl = document.getElementById('type-hero');
+  const shortCode = personalityType.code.replace('-like','').substring(0,4);
+  typeEl.innerHTML = `
+    <div class="type-hero-card__badge">${shortCode}</div>
+    <div>
+      <div class="type-hero-card__name">${personalityType.name}</div>
+      <div class="type-hero-card__aka">${personalityType.aka}</div>
+      <div class="type-hero-card__desc">${personalityType.traits.join(' · ')}</div>
+    </div>`;
+
+  // Big Five bars
+  const barsEl = document.getElementById('big5-bars');
+  barsEl.innerHTML = Object.entries(dimMeta).map(([key, d]) => {
+    const score = scores[key];
+    const level = LUMIQ.getDimensionLevel(score);
+    const hint = dimDescs[key][level];
+    return `
+      <div class="bar-row">
+        <div class="bar-meta">
+          <span class="bar-meta__label">${d.full}</span>
+          <span class="bar-meta__val">${score}%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:0%" data-target="${score}"></div></div>
+        <div class="t-caption" style="margin-top:3px">${hint}</div>
+      </div>`;
+  }).join('');
+
+  // Animacja słupków
+  setTimeout(() => {
+    document.querySelectorAll('.bar-fill[data-target]').forEach(el => {
+      el.style.width = el.dataset.target + '%';
+    });
+  }, 100);
+
+  // Opis
+  const typeDesc = LUMIQ.typeDescriptions[personalityType.code] || LUMIQ.typeDescriptions["MIXED"];
+  const descEl = document.getElementById('profile-desc');
+  descEl.innerHTML = `
+    <div class="desc-box__title">${personalityType.name}</div>
+    <div class="desc-box__type">${personalityType.aka} · ${Object.entries(dimMeta).map(([k,d])=>`${d.name}: ${scores[k]}%`).join(' · ')}</div>
+    <div class="desc-box__text">${typeDesc.replace(/\n\n/g, '<br><br>')}</div>
+    <div class="desc-box__traits">${personalityType.traits.map(t=>`<span class="trait-tag">${t}</span>`).join('')}</div>`;
+
+  // PDF preview rows (darmowe + zablokowane)
+  const freeRows = [
+    { key:'Typ osobowości', val: personalityType.name },
+    { key:'Kod', val: shortCode },
+    ...Object.entries(dimMeta).map(([k,d]) => ({ key: d.full, val: `${scores[k]} / 100` })),
+  ];
+  const lockedRows = [
+    { key:'Analiza zawodowa', val:'— — —' },
+    { key:'Rekomendacje kariery', val:'— — —' },
+    { key:'Obszary do rozwoju', val:'— — —' },
+  ];
+  const pdfEl = document.getElementById('pdf-preview-rows');
+  pdfEl.innerHTML = [
+    ...freeRows.map(r => `<div class="pdf-row"><span class="pdf-row__key">${r.key}</span><span class="pdf-row__val">${r.val}</span></div>`),
+    ...lockedRows.map(r => `<div class="pdf-row pdf-row--locked"><span class="pdf-row__key">${r.key}</span><span class="pdf-row__val">${r.val}</span></div>`),
+  ].join('');
+}
+
+// ── PAYWALL ────────────────────────────────────────────────────────────────
+function selectPaywallOption(opt) {
+  document.getElementById('opt-single').classList.toggle('selected', opt === 'single');
+  document.getElementById('opt-pro').classList.toggle('selected', opt === 'pro');
+  const btn = document.getElementById('paywall-cta-btn');
+  btn.textContent = opt === 'pro'
+    ? 'Rozpocznij Lumiq Pro — 99 zł / rok'
+    : 'Kup raport Premium — 39 zł';
+}
+
+function handlePayment() {
+  // TODO: podpiąć Stripe
+  alert('Płatności zostaną uruchomione wkrótce. Zapisz się na newsletter na lumiq.pl żeby dostać powiadomienie!');
+}
+
+// ── PDF ────────────────────────────────────────────────────────────────────
+function downloadPDF() {
+  if (!state.scores || !state.personalityType) return;
+  LUMIQ.generatePDF(state.scores, state.personalityType);
+}
+
+// ── SHARE ──────────────────────────────────────────────────────────────────
+function copyLink() {
+  // Enkodujemy wyniki w URL (base64) żeby można było udostępnić
+  if (state.scores) {
+    const data = btoa(JSON.stringify({ s: state.scores, t: state.personalityType.code }));
+    const url = window.location.origin + window.location.pathname + '?r=' + data;
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('Link skopiowany!');
+    }).catch(() => {
+      showToast('Skopiuj z paska adresu');
+    });
+  }
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;animation:fadeUp .3s ease';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ── SHARED RESULTS (z URL) ────────────────────────────────────────────────
+function checkSharedResults() {
+  const params = new URLSearchParams(window.location.search);
+  const r = params.get('r');
+  if (!r) return false;
+  try {
+    const data = JSON.parse(atob(r));
+    if (data.s && data.t) {
+      state.scores = data.s;
+      // Znajdź typ po kodzie
+      const fakeAnswers = {};
+      state.personalityType = LUMIQ.getPersonalityType(data.s);
+      renderResults();
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('results-screen').style.display = 'block';
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (!checkSharedResults()) {
+    document.getElementById('start-screen').style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>
